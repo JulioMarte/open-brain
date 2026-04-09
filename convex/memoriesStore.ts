@@ -1,0 +1,22 @@
+import { internalMutation } from "./_generated/server";
+import { v } from "convex/values";
+
+export const store = internalMutation({
+  args: {
+    text: v.string(),
+    embedding: v.array(v.float64()),
+    linkedEntityIds: v.optional(v.array(v.id("entities"))),
+    confidenceScore: v.optional(v.float64()),
+    createdAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const id = await ctx.db.insert("memories", {
+      text: args.text,
+      embedding: args.embedding,
+      linkedEntityIds: args.linkedEntityIds,
+      confidenceScore: args.confidenceScore,
+      createdAt: args.createdAt,
+    });
+    return id;
+  },
+});
