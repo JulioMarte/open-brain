@@ -2,11 +2,20 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  users: defineTable({
+    tokenIdentifier: v.string(),
+    role: v.union(v.literal("human"), v.literal("agent"), v.literal("sub_agent"), v.literal("admin")),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_tokenIdentifier", ["tokenIdentifier"]),
+
   inbox_log: defineTable({
     rawText: v.string(),
     source: v.string(),
     processed: v.boolean(),
     createdAt: v.number(),
+    createdBy: v.id("users"),
   }).index("by_processed", ["processed"]),
 
   entities: defineTable({
@@ -16,9 +25,13 @@ export default defineSchema({
     status: v.union(v.literal("active"), v.literal("archived")),
     metadata: v.optional(v.any()),
     updatedAt: v.number(),
+    ownerId: v.id("users"),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
   })
     .index("by_type", ["type"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_ownerId", ["ownerId"]),
 
   tasks: defineTable({
     entityId: v.id("entities"),
@@ -28,9 +41,12 @@ export default defineSchema({
     blockedBy: v.array(v.id("tasks")),
     agentCreated: v.boolean(),
     createdAt: v.number(),
+    createdBy: v.id("users"),
+    updatedBy: v.id("users"),
   })
     .index("by_entityId", ["entityId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_createdBy", ["createdBy"]),
 
   memories: defineTable({
     text: v.string(),
@@ -38,6 +54,7 @@ export default defineSchema({
     linkedEntityIds: v.optional(v.array(v.id("entities"))),
     confidenceScore: v.optional(v.float64()),
     createdAt: v.number(),
+    createdBy: v.id("users"),
   }).vectorIndex("by_embedding", {
     vectorField: "embedding",
     dimensions: 1536,
@@ -50,5 +67,8 @@ export default defineSchema({
     reason: v.string(),
     status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
     createdAt: v.number(),
-  }).index("by_status", ["status"]),
+    createdBy: v.id("users"),
+    reviewedBy: v.optional(v.id("users")),
+  }).index("by_status", ["status"])
+    .index("by_createdBy", ["createdBy"]),
 });
