@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx convex:*)",
+      "Bash(npm i:*)",
+      "WebFetch(domain:docs.convex.dev)",
+      "WebFetch(domain:clerk.com)",
+      "WebSearch"
+    ]
+  }
+}
