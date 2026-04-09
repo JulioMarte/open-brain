@@ -89,7 +89,7 @@ app.post("/message", authMiddleware, async (req: any, res: any) => {
       const toolName = message.params?.name;
       const args = message.params?.arguments || {};
 
-      const result = await handleToolCall(toolName, args);
+      const result = await handleToolCall(toolName, args, req.userToken);
 
       const response = {
         jsonrpc: "2.0",

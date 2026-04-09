@@ -5,27 +5,38 @@ if (!CONVEX_URL) {
   throw new Error("CONVEX_URL environment variable is not set");
 }
 
-export const convexClient = new ConvexHttpClient(CONVEX_URL);
+const baseUrl = CONVEX_URL;
 
-export async function semanticSearch(query: string): Promise<any[]> {
-  return await convexClient.query("actions:searchMemories", {
+export function createConvexClient(userToken?: string): ConvexHttpClient {
+  if (userToken) {
+    return new ConvexHttpClient(baseUrl, { auth: userToken });
+  }
+  return new ConvexHttpClient(baseUrl);
+}
+
+export async function semanticSearch(query: string, userToken?: string): Promise<any[]> {
+  const client = createConvexClient(userToken);
+  return await (client as any).query("actions:searchMemories", {
     queryText: query,
     limit: 10,
   });
 }
 
-export async function getActionableTasks(): Promise<any[]> {
-  return await convexClient.query("tasks:getActionable", {});
+export async function getActionableTasks(userToken?: string): Promise<any[]> {
+  const client = createConvexClient(userToken);
+  return await (client as any).query("tasks:getActionable", {});
 }
 
-export async function proposeAction(type: string, payload: string, reason: string): Promise<string> {
-  return await convexClient.mutation("proposals:create", {
+export async function proposeAction(type: string, payload: string, reason: string, userToken?: string): Promise<string> {
+  const client = createConvexClient(userToken);
+  return await (client as any).mutation("proposals:create", {
     type,
     payload,
     reason,
   });
 }
 
-export async function markTaskDone(taskId: string): Promise<void> {
-  await convexClient.mutation("tasks:markDone", { id: taskId });
+export async function markTaskDone(taskId: string, userToken?: string): Promise<void> {
+  const client = createConvexClient(userToken);
+  await (client as any).mutation("tasks:markDone", { id: taskId });
 }

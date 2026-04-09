@@ -63,16 +63,16 @@ export const tools: ToolDefinition[] = [
   },
 ];
 
-export async function handleToolCall(toolName: string, args: any): Promise<any> {
+export async function handleToolCall(toolName: string, args: any, userToken?: string): Promise<any> {
   switch (toolName) {
     case "semantic_search":
-      return await semanticSearch(args.query);
+      return await semanticSearch(args.query, userToken);
     case "get_actionable_tasks":
-      return await getActionableTasks();
+      return await getActionableTasks(userToken);
     case "propose_action":
-      return await proposeAction(args.type, args.payload, args.reason);
+      return await proposeAction(args.type, args.payload, args.reason, userToken);
     case "mark_task_done":
-      return await markTaskDone(args.taskId);
+      return await markTaskDone(args.taskId, userToken);
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }

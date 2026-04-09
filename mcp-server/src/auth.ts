@@ -16,7 +16,12 @@ function timingSafeEqual(a: string, b: string): boolean {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export interface AuthenticatedRequest extends Request {
+  userToken?: string;
+  agentId?: string;
+}
+
+export function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -25,10 +30,13 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   }
 
   const token = authHeader.slice(7);
-  if (!timingSafeEqual(token, API_KEY)) {
+  const apiKey = API_KEY as string;
+  if (!timingSafeEqual(token, apiKey)) {
     res.status(401).json({ error: "Invalid API key" });
     return;
   }
+
+  req.userToken = req.headers["x-user-token"] as string | undefined;
 
   next();
 }
