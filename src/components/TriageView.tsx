@@ -1,31 +1,58 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
 import { CheckCircle, XCircle } from "lucide-react";
+import { api } from "../../convex/_generated/api";
+import { useQuery, useMutation } from "convex/react";
 
-interface Proposal {
-  _id: string;
-  type: string;
-  payload: string;
-  reason: string;
-}
+export function TriageView() {
+  const { t } = useTranslation();
+  const proposals = useQuery(api.proposals.listPending);
+  const approve = useMutation(api.proposals.approve);
+  const reject = useMutation(api.proposals.reject);
 
-interface TriageViewProps {
-  proposals?: Proposal[];
-  onApprove?: (id: string) => void;
-  onReject?: (id: string) => void;
-}
+  const handleApprove = async (id: string) => {
+    try {
+      await approve({ id });
+    } catch (error) {
+      console.error("Failed to approve:", error);
+    }
+  };
 
-export function TriageView({ proposals = [], onApprove, onReject }: TriageViewProps) {
+  const handleReject = async (id: string) => {
+    try {
+      await reject({ id });
+    } catch (error) {
+      console.error("Failed to reject:", error);
+    }
+  };
+
+  if (proposals === undefined) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold">{t("triage.title")}</h2>
+          <p className="text-muted-foreground">{t("triage.description")}</p>
+        </div>
+        <Card>
+          <CardContent className="p-8 text-center text-muted-foreground">
+            {t("triage.loading")}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Triage</h2>
-        <p className="text-muted-foreground">Review and approve agent proposals</p>
+        <h2 className="text-2xl font-bold">{t("triage.title")}</h2>
+        <p className="text-muted-foreground">{t("triage.description")}</p>
       </div>
       {proposals.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
-            No pending proposals
+            {t("triage.noProposals")}
           </CardContent>
         </Card>
       ) : (
@@ -45,18 +72,18 @@ export function TriageView({ proposals = [], onApprove, onReject }: TriageViewPr
                 <Button
                   variant="success"
                   size="sm"
-                  onClick={() => onApprove?.(proposal._id)}
+                  onClick={() => handleApprove(proposal._id)}
                 >
                   <CheckCircle className="h-4 w-4" />
-                  Approve
+                  {t("triage.approve")}
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => onReject?.(proposal._id)}
+                  onClick={() => handleReject(proposal._id)}
                 >
                   <XCircle className="h-4 w-4" />
-                  Reject
+                  {t("triage.reject")}
                 </Button>
               </CardFooter>
             </Card>

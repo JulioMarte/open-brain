@@ -4,15 +4,14 @@ import { v } from "convex/values";
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("inbox_log").collect();
+    return await ctx.db.query("inbox_log").take(100);
   },
 });
 
 export const listUnprocessed = query({
   args: {},
   handler: async (ctx) => {
-    const all = await ctx.db.query("inbox_log").collect();
-    return all.filter((i) => !i.processed);
+    return await ctx.db.query("inbox_log").withIndex("by_processed", q => q.eq("processed", false)).take(100);
   },
 });
 
@@ -26,6 +25,22 @@ export const create = internalMutation({
       rawText: args.rawText,
       source: args.source,
       processed: false,
+      createdAt: Date.now(),
+    });
+    return id;
+  },
+});
+
+export const createAndProcess = internalMutation({
+  args: {
+    rawText: v.string(),
+    source: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const id = await ctx.db.insert("inbox_log", {
+      rawText: args.rawText,
+      source: args.source,
+      processed: true,
       createdAt: Date.now(),
     });
     return id;

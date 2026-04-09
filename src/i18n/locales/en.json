@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "Open Brain"
+  },
+  "nav": {
+    "triage": "Triage",
+    "focus": "Focus",
+    "entities": "Entities",
+    "search": "Search"
+  },
+  "triage": {
+    "title": "Triage",
+    "description": "Review and approve agent proposals",
+    "loading": "Loading...",
+    "noProposals": "No pending proposals",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+  "focus": {
+    "title": "Focus",
+    "description": "Tasks ready to be worked on",
+    "loading": "Loading...",
+    "noTasks": "No actionable tasks"
+  },
+  "entities": {
+    "title": "Entities",
+    "description": "Projects, people, ideas, and more",
+    "newEntity": "New Entity",
+    "entityName": "Entity name",
+    "create": "Create",
+    "types": {
+      "project": "Project",
+      "person": "Person",
+      "idea": "Idea",
+      "admin": "Admin"
+    }
+  },
+  "search": {
+    "title": "Search",
+    "description": "Semantic search across memories",
+    "placeholder": "Search memories...",
+    "searching": "Searching...",
+    "noResults": "No results found",
+    "memory": "Memory #",
+    "confidence": "confidence"
+  }
+}

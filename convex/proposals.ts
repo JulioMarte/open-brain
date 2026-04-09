@@ -1,24 +1,52 @@
 import { query, mutation } from "./_generated/server";
+import { api } from "./_generated/api";
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
+
+interface CreateTaskPayload {
+  entityId: Id<"entities">;
+  title: string;
+  description?: string;
+  blockedBy?: Id<"tasks">[];
+}
+
+interface UpdateEntityPayload {
+  entityId: Id<"entities">;
+  name?: string;
+  description?: string;
+  status?: "active" | "archived";
+  metadata?: unknown;
+}
+
+interface AddMemoryPayload {
+  text: string;
+  linkedEntityIds?: Id<"entities">[];
+}
 
 export const list = query({
   args: {
-    status: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
+    status: v.optional(
+      v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))
+    ),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query("proposals");
     if (args.status) {
-      q = q.filter((q) => q.eq(q.field("status"), args.status));
+      return await ctx.db
+        .query("proposals")
+        .withIndex("by_status", (q) => q.eq("status", args.status!))
+        .take(100);
     }
-    return await q.collect();
+    return await ctx.db.query("proposals").take(100);
   },
 });
 
 export const listPending = query({
   args: {},
   handler: async (ctx) => {
-    const all = await ctx.db.query("proposals").collect();
-    return all.filter((p) => p.status === "pending");
+    return await ctx.db
+      .query("proposals")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .take(100);
   },
 });
 
@@ -45,21 +73,51 @@ export const approve = mutation({
   handler: async (ctx, args) => {
     const proposal = await ctx.db.get(args.id);
     if (!proposal) throw new Error("Proposal not found");
-    
-    const payload = JSON.parse(proposal.payload);
-    
+
+    let payload: Record<string, unknown>;
+    try {
+      payload = JSON.parse(proposal.payload);
+    } catch {
+      throw new Error("Invalid payload JSON");
+    }
+
     if (proposal.type === "create_task") {
+      const taskPayload = payload as unknown as CreateTaskPayload;
+      if (!taskPayload.entityId) throw new Error("Missing entityId in payload");
+      const entity = await ctx.db.get(taskPayload.entityId);
+      if (!entity) throw new Error("Entity not found");
+      if (!taskPayload.title || typeof taskPayload.title !== "string") throw new Error("Invalid title");
+
       await ctx.db.insert("tasks", {
-        entityId: payload.entityId,
-        title: payload.title,
-        description: payload.description,
+        entityId: taskPayload.entityId,
+        title: taskPayload.title,
+        description: taskPayload.description,
         status: "todo",
-        blockedBy: payload.blockedBy || [],
+        blockedBy: taskPayload.blockedBy || [],
         agentCreated: true,
         createdAt: Date.now(),
       });
+    } else if (proposal.type === "update_entity") {
+      const updatePayload = payload as unknown as UpdateEntityPayload;
+      if (!updatePayload.entityId) throw new Error("Missing entityId in payload");
+      const entity = await ctx.db.get(updatePayload.entityId);
+      if (!entity) throw new Error("Entity not found");
+
+      const updates: Record<string, unknown> = { updatedAt: Date.now() };
+      if (updatePayload.name !== undefined) updates.name = updatePayload.name;
+      if (updatePayload.description !== undefined) updates.description = updatePayload.description;
+      if (updatePayload.status !== undefined) updates.status = updatePayload.status;
+      if (updatePayload.metadata !== undefined) updates.metadata = updatePayload.metadata;
+      await ctx.db.patch(updatePayload.entityId, updates);
+    } else if (proposal.type === "add_memory") {
+      const memoryPayload = payload as unknown as AddMemoryPayload;
+      if (!memoryPayload.text || typeof memoryPayload.text !== "string") throw new Error("Invalid text");
+      await ctx.scheduler.runAfter(0, api.actions.generateAndStoreMemory, {
+        text: memoryPayload.text,
+        linkedEntityIds: memoryPayload.linkedEntityIds,
+      });
     }
-    
+
     await ctx.db.patch(args.id, { status: "approved" });
     return args.id;
   },

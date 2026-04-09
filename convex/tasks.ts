@@ -1,5 +1,8 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { Id, Doc } from "./_generated/dataModel";
+
+type TaskDoc = Doc<"tasks">;
 
 export const list = query({
   args: {
@@ -7,29 +10,64 @@ export const list = query({
     status: v.optional(v.union(v.literal("todo"), v.literal("done"))),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query("tasks");
     if (args.entityId) {
-      q = q.filter((q) => q.eq(q.field("entityId"), args.entityId));
+      const tasks = await ctx.db
+        .query("tasks")
+        .withIndex("by_entityId", (q) => q.eq("entityId", args.entityId!))
+        .take(100);
+      if (args.status) {
+        return tasks.filter((t) => t.status === args.status);
+      }
+      return tasks;
     }
     if (args.status) {
-      q = q.filter((q) => q.eq(q.field("status"), args.status));
+      return await ctx.db
+        .query("tasks")
+        .withIndex("by_status", (q) => q.eq("status", args.status!))
+        .take(100);
     }
-    return await q.collect();
+    return await ctx.db.query("tasks").take(100);
   },
 });
 
 export const getActionable = query({
   args: {},
   handler: async (ctx) => {
-    const allTasks = await ctx.db.query("tasks").collect();
-    const todoTasks = allTasks.filter((t) => t.status === "todo");
-    return todoTasks.filter((task) => {
-      if (task.blockedBy.length === 0) return true;
-      return task.blockedBy.every((blockedId) => {
-        const blockedTask = allTasks.find((t) => t._id === blockedId);
-        return blockedTask?.status === "done";
-      });
-    });
+    const todoTasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_status", (q) => q.eq("status", "todo"))
+      .take(100);
+
+    if (todoTasks.length === 0) return [];
+
+    const allBlockedIds = new Set<string>();
+    for (const task of todoTasks) {
+      for (const blockedId of task.blockedBy) {
+        allBlockedIds.add(blockedId);
+      }
+    }
+
+    const blockedTasks = await Promise.all(
+      Array.from(allBlockedIds).map((id) => ctx.db.get(id as Id<"tasks">))
+    );
+    const blockedTaskMap = new Map<string, boolean>();
+    for (const task of blockedTasks) {
+      if (task && "status" in task) {
+        blockedTaskMap.set(task._id, task.status === "done");
+      }
+    }
+
+    const actionable = [];
+    for (const task of todoTasks) {
+      if (task.blockedBy.length === 0) {
+        actionable.push(task);
+        continue;
+      }
+      if (task.blockedBy.every((blockedId) => blockedTaskMap.get(blockedId))) {
+        actionable.push(task);
+      }
+    }
+    return actionable;
   },
 });
 
@@ -61,7 +99,7 @@ export const updateStatus = mutation({
     status: v.union(v.literal("todo"), v.literal("done")),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, {});
+    await ctx.db.patch(args.id, { status: args.status });
     return args.id;
   },
 });

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Inbox, Brain, Search, LayoutGrid } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 
@@ -9,21 +10,31 @@ interface LayoutProps {
 }
 
 const navItems = [
-  { id: "triage", label: "Triage", icon: Inbox },
-  { id: "focus", label: "Focus", icon: Brain },
-  { id: "entities", label: "Entities", icon: LayoutGrid },
-  { id: "search", label: "Search", icon: Search },
+  { id: "triage", labelKey: "nav.triage", icon: Inbox },
+  { id: "focus", labelKey: "nav.focus", icon: Brain },
+  { id: "entities", labelKey: "nav.entities", icon: LayoutGrid },
+  { id: "search", labelKey: "nav.search", icon: Search },
 ];
 
 export function Layout({ children, currentView, onNavigate }: LayoutProps) {
+  const { t, i18n } = useTranslation();
+
   return (
     <div className="flex min-h-screen">
       <aside className="w-64 border-r bg-sidebar flex flex-col">
-        <div className="p-4 border-b">
-          <h1 className="text-xl font-bold">Open Brain</h1>
+        <div className="p-4 border-b flex items-center justify-between">
+          <h1 className="text-xl font-bold">{t("app.title")}</h1>
+          <select
+            value={i18n.language}
+            onChange={(e) => i18n.changeLanguage(e.target.value)}
+            className="text-xs bg-background border rounded px-2 py-1"
+          >
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+          </select>
         </div>
         <nav className="flex-1 p-4 space-y-1">
-          {navItems.map(({ id, label, icon: Icon }) => (
+          {navItems.map(({ id, labelKey, icon: Icon }) => (
             <button
               key={id}
               onClick={() => onNavigate(id)}
@@ -32,7 +43,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
               }`}
             >
               <Icon className="h-4 w-4" />
-              {label}
+              {t(labelKey)}
             </button>
           ))}
         </nav>

@@ -14,13 +14,7 @@ interface Props {
 
 export function ConvexClerkProvider({ children }: Props) {
   return (
-    <ClerkProvider
-      publishableKey={CLERK_PUBLISHABLE_KEY}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-up"
-      afterSignInUrl="/app"
-      afterSignUpUrl="/app"
-    >
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         {children}
       </ConvexProviderWithClerk>

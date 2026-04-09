@@ -7,7 +7,7 @@ export default defineSchema({
     source: v.string(),
     processed: v.boolean(),
     createdAt: v.number(),
-  }),
+  }).index("by_processed", ["processed"]),
 
   entities: defineTable({
     type: v.union(v.literal("project"), v.literal("person"), v.literal("idea"), v.literal("admin")),
@@ -16,7 +16,9 @@ export default defineSchema({
     status: v.union(v.literal("active"), v.literal("archived")),
     metadata: v.optional(v.any()),
     updatedAt: v.number(),
-  }),
+  })
+    .index("by_type", ["type"])
+    .index("by_status", ["status"]),
 
   tasks: defineTable({
     entityId: v.id("entities"),
@@ -26,7 +28,9 @@ export default defineSchema({
     blockedBy: v.array(v.id("tasks")),
     agentCreated: v.boolean(),
     createdAt: v.number(),
-  }),
+  })
+    .index("by_entityId", ["entityId"])
+    .index("by_status", ["status"]),
 
   memories: defineTable({
     text: v.string(),
@@ -34,7 +38,11 @@ export default defineSchema({
     linkedEntityIds: v.optional(v.array(v.id("entities"))),
     confidenceScore: v.optional(v.float64()),
     createdAt: v.number(),
-  }).index("embedding", ["embedding"]),
+  }).vectorIndex("by_embedding", {
+    vectorField: "embedding",
+    dimensions: 1536,
+    filterFields: ["linkedEntityIds"],
+  }),
 
   proposals: defineTable({
     type: v.union(v.literal("create_task"), v.literal("update_entity"), v.literal("add_memory")),
@@ -42,5 +50,5 @@ export default defineSchema({
     reason: v.string(),
     status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
     createdAt: v.number(),
-  }),
+  }).index("by_status", ["status"]),
 });

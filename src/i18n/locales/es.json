@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "Cerebro Abierto"
+  },
+  "nav": {
+    "triage": "Clasificación",
+    "focus": "Enfoque",
+    "entities": "Entidades",
+    "search": "Buscar"
+  },
+  "triage": {
+    "title": "Clasificación",
+    "description": "Revisar y aprobar propuestas de agentes",
+    "loading": "Cargando...",
+    "noProposals": "Sin propuestas pendientes",
+    "approve": "Aprobar",
+    "reject": "Rechazar"
+  },
+  "focus": {
+    "title": "Enfoque",
+    "description": "Tareas listas para trabajar",
+    "loading": "Cargando...",
+    "noTasks": "Sin tareas actionables"
+  },
+  "entities": {
+    "title": "Entidades",
+    "description": "Proyectos, personas, ideas y más",
+    "newEntity": "Nueva Entidad",
+    "entityName": "Nombre de entidad",
+    "create": "Crear",
+    "types": {
+      "project": "Proyecto",
+      "person": "Persona",
+      "idea": "Idea",
+      "admin": "Admin"
+    }
+  },
+  "search": {
+    "title": "Buscar",
+    "description": "Búsqueda semántica en memorias",
+    "placeholder": "Buscar memorias...",
+    "searching": "Buscando...",
+    "noResults": "Sin resultados",
+    "memory": "Memoria #",
+    "confidence": "confianza"
+  }
+}

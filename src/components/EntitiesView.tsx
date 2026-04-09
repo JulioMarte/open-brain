@@ -1,45 +1,44 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Plus } from "lucide-react";
+import { api } from "../../convex/_generated/api";
+import { useQuery, useMutation } from "convex/react";
 
 type EntityType = "project" | "person" | "idea" | "admin";
 
-interface Entity {
-  _id: string;
-  type: EntityType;
-  name: string;
-  description?: string;
-}
-
-interface EntitiesViewProps {
-  entities?: Entity[];
-  onCreate?: (type: EntityType, name: string) => void;
-}
-
-export function EntitiesView({ entities = [], onCreate }: EntitiesViewProps) {
+export function EntitiesView() {
+  const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<EntityType>("project");
 
+  const entities = useQuery(api.entities.list);
+  const create = useMutation(api.entities.create);
+
   const handleCreate = () => {
     if (!newName.trim()) return;
-    onCreate?.(newType, newName);
+    create({ type: newType, name: newName });
     setNewName("");
     setShowForm(false);
   };
+
+  if (entities === undefined) {
+    return <div className="p-4">{t("focus.loading")}</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Entities</h2>
-          <p className="text-muted-foreground">Projects, people, ideas, and more</p>
+          <h2 className="text-2xl font-bold">{t("entities.title")}</h2>
+          <p className="text-muted-foreground">{t("entities.description")}</p>
         </div>
         <Button onClick={() => setShowForm(!showForm)}>
           <Plus className="h-4 w-4" />
-          New Entity
+          {t("entities.newEntity")}
         </Button>
       </div>
       {showForm && (
@@ -47,7 +46,7 @@ export function EntitiesView({ entities = [], onCreate }: EntitiesViewProps) {
           <CardContent className="p-4 flex gap-4 items-end">
             <div className="flex-1">
               <Input
-                placeholder="Entity name"
+                placeholder={t("entities.entityName")}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
               />
@@ -57,12 +56,12 @@ export function EntitiesView({ entities = [], onCreate }: EntitiesViewProps) {
               value={newType}
               onChange={(e) => setNewType(e.target.value as EntityType)}
             >
-              <option value="project">Project</option>
-              <option value="person">Person</option>
-              <option value="idea">Idea</option>
-              <option value="admin">Admin</option>
+              <option value="project">{t("entities.types.project")}</option>
+              <option value="person">{t("entities.types.person")}</option>
+              <option value="idea">{t("entities.types.idea")}</option>
+              <option value="admin">{t("entities.types.admin")}</option>
             </select>
-            <Button onClick={handleCreate}>Create</Button>
+            <Button onClick={handleCreate}>{t("entities.create")}</Button>
           </CardContent>
         </Card>
       )}

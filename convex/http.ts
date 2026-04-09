@@ -18,7 +18,7 @@ http.route({
         });
       }
 
-      await ctx.runMutation(internal.inbox.create, {
+      await ctx.runMutation(internal.inbox.createAndProcess, {
         rawText: text,
         source: source,
       });
@@ -28,6 +28,37 @@ http.route({
       });
 
       return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error: any) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }),
+});
+
+http.route({
+  path: "/searchMemories",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const { queryText, limit } = await request.json();
+
+      if (!queryText) {
+        return new Response(JSON.stringify({ error: "Missing queryText" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const results = await ctx.runAction(api.actions.searchMemories, {
+        queryText,
+        limit,
+      });
+
+      return new Response(JSON.stringify(results), {
         headers: { "Content-Type": "application/json" },
       });
     } catch (error: any) {
