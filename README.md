@@ -1,73 +1,42 @@
-# React + TypeScript + Vite
+# Open Brain
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern task and memory management application powered by AI, built with React, TypeScript, Convex, and Clerk authentication.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **AI-Powered Triage**: Intelligent task prioritization and sorting
+- **Focus Mode**: Distraction-free workspace for deep work
+- **Entity Management**: Organize and manage knowledge entities
+- **Semantic Search**: Find information using natural language queries
+- **Real-time Sync**: Data syncs instantly across all devices via Convex
+- **Secure Authentication**: User authentication via Clerk with Convex integration
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React 19 + TypeScript + Vite
+- **Backend**: Convex (fullstack TypeScript platform)
+- **Authentication**: Clerk with Convex integration
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Routing**: Client-side routing with Clerk path-based navigation
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Clone the repository
+2. Copy `.env.local` (see `.env.local.example` if available)
+3. Run `npm install`
+4. Run `npx convex dev` to start the backend
+5. Run `npm run dev` to start the frontend
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Environment Variables
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- `VITE_CLERK_PUBLISHABLE_KEY`: Clerk publishable key
+- `VITE_CONVEX_URL`: Convex deployment URL
+- `VITE_CONVEX_SITE_URL`: Convex site URL
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Project Structure
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- `src/`: React frontend source
+  - `components/`: UI components (Layout, TriageView, FocusView, etc.)
+  - `providers/`: ConvexClerkProvider for auth setup
+- `convex/`: Convex backend functions
+  - `auth.config.ts`: Clerk/Convex authentication configuration
