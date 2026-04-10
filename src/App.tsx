@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { SignIn, useAuth } from "@clerk/clerk-react";
+import { SignIn } from "@clerk/clerk-react";
+import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
 import { ConvexClerkProvider } from "./providers/ConvexClerkProvider";
 import { Layout } from "./components/Layout";
 import { TriageView } from "./components/TriageView";
 import { FocusView } from "./components/FocusView";
 import { EntitiesView } from "./components/EntitiesView";
 import { SearchView } from "./components/SearchView";
+import { useStoreUserEffect } from "./hooks/useStoreUserEffect";
 
 type View = "triage" | "focus" | "entities" | "search";
 
@@ -19,6 +21,7 @@ function LoadingScreen() {
 
 function AppPage() {
   const [currentView, setCurrentView] = useState<View>("triage");
+  useStoreUserEffect();
 
   return (
     <Layout currentView={currentView} onNavigate={(view) => setCurrentView(view as View)}>
@@ -30,28 +33,20 @@ function AppPage() {
   );
 }
 
-function AppContent() {
-  const { isLoaded, isSignedIn } = useAuth();
-
-  if (!isLoaded) {
-    return <LoadingScreen />;
-  }
-
-  if (!isSignedIn) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <SignIn routing="hash" />
-      </div>
-    );
-  }
-
-  return <AppPage />;
-}
-
 function App() {
   return (
     <ConvexClerkProvider>
-      <AppContent />
+      <AuthLoading>
+        <LoadingScreen />
+      </AuthLoading>
+      <Unauthenticated>
+        <div className="flex items-center justify-center min-h-screen bg-background">
+          <SignIn routing="hash" />
+        </div>
+      </Unauthenticated>
+      <Authenticated>
+        <AppPage />
+      </Authenticated>
     </ConvexClerkProvider>
   );
 }

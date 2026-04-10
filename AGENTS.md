@@ -6,7 +6,14 @@ When working on Convex code, **always read `convex/_generated/ai/guidelines.md` 
 Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
 <!-- convex-ai-end -->
 
-## Convex Development
+## Índice de Documentación
+
+### Autenticación y Auth
+- **[AUTH-SYSTEM.md](docs/AUTH-SYSTEM.md)** - Arquitectura completa del sistema de auth
+- **[AUTH-QUICK-REFERENCE.md](docs/AUTH-QUICK-REFERENCE.md)** - Referencia rápida y troubleshooting
+- **[AUTH-FIX-PLAN.md](docs/AUTH-FIX-PLAN.md)** - Histórico de fixes y decisiones arquitecturales
+
+### Convex Development
 
 ### Running TypeScript Checks
 - **ALWAYS use**: `npx convex dev` or `npx convex build --typecheck`
@@ -29,3 +36,47 @@ const typedPayload = payload as unknown as MyTypedPayload;
 - Actions cannot use `ctx.db` or `ctx.vectorSearch` directly - only `ctx.runQuery`/`ctx.runMutation`/`ctx.runAction`
 - Vector search (`ctx.vectorSearch`) only works in queries, not actions
 - JSON.parse returns `unknown` type - always cast through `unknown` to your typed interface
+
+## Auth System Overview
+
+### ⚠️ CRITICAL: React Hooks Rules for Auth
+
+**NEVER call React hooks (`useMutation`, `useQuery`) after early return statements.** This causes "Rendered more hooks than during previous render" errors.
+
+**USE the composition pattern with `<Authenticated>`, `<Unauthenticated>`, `<AuthLoading>` from `convex/react`:**
+
+```tsx
+import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
+
+function App() {
+  return (
+    <ConvexClerkProvider>
+      <AuthLoading>
+        <LoadingScreen />
+      </AuthLoading>
+      <Unauthenticated>
+        <SignIn routing="hash" />
+      </Unauthenticated>
+      <Authenticated>
+        <AppPage />
+      </Authenticated>
+    </ConvexClerkProvider>
+  );
+}
+
+function AppPage() {
+  useStoreUserEffect(); // ✅ Safe - inside <Authenticated>
+  return <Layout>...</Layout>;
+}
+```
+
+**USE `useConvexAuth()` from `convex/react` instead of Clerk's `useAuth()` when checking auth state in hooks.**
+
+See [AUTH-SYSTEM.md](docs/AUTH-SYSTEM.md) and [AUTH-QUICK-REFERENCE.md](docs/AUTH-QUICK-REFERENCE.md) for detailed patterns.
+
+## Regla de Documentación para Agentes
+
+Cuando encuentres un error nuevo, patrón nuevo, o cambio en el sistema de auth:
+1. **Documenta** en el archivo `docs/AUTH-SYSTEM.md` o `docs/AUTH-QUICK-REFERENCE.md`
+2. **Actualiza** este `AGENTS.md` si agregas nuevos documentos al índice
+3. **Agrega** una nota en `docs/AUTH-FIX-PLAN.md` sobre el cambio realizado
