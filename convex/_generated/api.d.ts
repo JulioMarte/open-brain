@@ -12,6 +12,8 @@ import type * as actions from "../actions.js";
 import type * as entities from "../entities.js";
 import type * as http from "../http.js";
 import type * as inbox from "../inbox.js";
+import type * as lib_auth from "../lib/auth.js";
+import type * as lib_systemUser from "../lib/systemUser.js";
 import type * as memories from "../memories.js";
 import type * as memoriesStore from "../memoriesStore.js";
 import type * as proposals from "../proposals.js";
@@ -28,6 +30,8 @@ declare const fullApi: ApiFromModules<{
   entities: typeof entities;
   http: typeof http;
   inbox: typeof inbox;
+  "lib/auth": typeof lib_auth;
+  "lib/systemUser": typeof lib_systemUser;
   memories: typeof memories;
   memoriesStore: typeof memoriesStore;
   proposals: typeof proposals;

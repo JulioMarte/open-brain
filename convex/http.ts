@@ -18,13 +18,17 @@ http.route({
         });
       }
 
+      const systemUserId = await ctx.runMutation(internal.lib.systemUser.getOrCreateSystemUser, {});
+
       await ctx.runMutation(internal.inbox.createAndProcess, {
         rawText: text,
         source: source,
+        createdBy: systemUserId,
       });
 
       await ctx.runAction(api.actions.generateAndStoreMemory, {
         text: text,
+        createdBy: systemUserId,
       });
 
       return new Response(JSON.stringify({ success: true }), {

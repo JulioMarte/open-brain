@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id, Doc } from "./_generated/dataModel";
+import { getCurrentUser, isAdmin } from "./lib/auth";
 
 type TaskDoc = Doc<"tasks">;
 
@@ -80,6 +81,8 @@ export const create = mutation({
     agentCreated: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
     const taskId = await ctx.db.insert("tasks", {
       entityId: args.entityId,
       title: args.title,
@@ -88,6 +91,8 @@ export const create = mutation({
       blockedBy: args.blockedBy || [],
       agentCreated: args.agentCreated || false,
       createdAt: Date.now(),
+      createdBy: user._id,
+      updatedBy: user._id,
     });
     return taskId;
   },

@@ -8,6 +8,7 @@ export const store = internalMutation({
     linkedEntityIds: v.optional(v.array(v.id("entities"))),
     confidenceScore: v.optional(v.float64()),
     createdAt: v.number(),
+    createdBy: v.id("users"),
   },
   handler: async (ctx, args) => {
     const id = await ctx.db.insert("memories", {
@@ -16,6 +17,7 @@ export const store = internalMutation({
       linkedEntityIds: args.linkedEntityIds,
       confidenceScore: args.confidenceScore,
       createdAt: args.createdAt,
+      createdBy: args.createdBy,
     });
     return id;
   },
