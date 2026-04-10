@@ -2,6 +2,7 @@ import { query, mutation } from "./_generated/server";
 import { api } from "./_generated/api";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { getCurrentUser, requireAdmin, isAdmin } from "./lib/auth";
 
 interface CreateTaskPayload {
   entityId: Id<"entities">;
@@ -30,6 +31,7 @@ export const list = query({
     ),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.status) {
       return await ctx.db
         .query("proposals")
@@ -43,6 +45,7 @@ export const list = query({
 export const listPending = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     return await ctx.db
       .query("proposals")
       .withIndex("by_status", (q) => q.eq("status", "pending"))
@@ -57,12 +60,14 @@ export const create = mutation({
     reason: v.string(),
   },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
     const id = await ctx.db.insert("proposals", {
       type: args.type,
       payload: args.payload,
       reason: args.reason,
       status: "pending",
       createdAt: Date.now(),
+      createdBy: user._id,
     });
     return id;
   },
@@ -71,6 +76,7 @@ export const create = mutation({
 export const approve = mutation({
   args: { id: v.id("proposals") },
   handler: async (ctx, args) => {
+    const user = await requireAdmin(ctx);
     const proposal = await ctx.db.get(args.id);
     if (!proposal) throw new Error("Proposal not found");
 
@@ -96,6 +102,9 @@ export const approve = mutation({
         blockedBy: taskPayload.blockedBy || [],
         agentCreated: true,
         createdAt: Date.now(),
+        updatedAt: Date.now(),
+        createdBy: user._id,
+        updatedBy: user._id,
       });
     } else if (proposal.type === "update_entity") {
       const updatePayload = payload as unknown as UpdateEntityPayload;
@@ -103,7 +112,7 @@ export const approve = mutation({
       const entity = await ctx.db.get(updatePayload.entityId);
       if (!entity) throw new Error("Entity not found");
 
-      const updates: Record<string, unknown> = { updatedAt: Date.now() };
+      const updates: Record<string, unknown> = { updatedAt: Date.now(), updatedBy: user._id };
       if (updatePayload.name !== undefined) updates.name = updatePayload.name;
       if (updatePayload.description !== undefined) updates.description = updatePayload.description;
       if (updatePayload.status !== undefined) updates.status = updatePayload.status;
@@ -115,10 +124,11 @@ export const approve = mutation({
       await ctx.scheduler.runAfter(0, api.actions.generateAndStoreMemory, {
         text: memoryPayload.text,
         linkedEntityIds: memoryPayload.linkedEntityIds,
+        createdBy: user._id,
       });
     }
 
-    await ctx.db.patch(args.id, { status: "approved" });
+    await ctx.db.patch(args.id, { status: "approved", reviewedBy: user._id });
     return args.id;
   },
 });
@@ -126,7 +136,8 @@ export const approve = mutation({
 export const reject = mutation({
   args: { id: v.id("proposals") },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, { status: "rejected" });
+    const user = await requireAdmin(ctx);
+    await ctx.db.patch(args.id, { status: "rejected", reviewedBy: user._id });
     return args.id;
   },
 });

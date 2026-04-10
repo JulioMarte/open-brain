@@ -1,5 +1,5 @@
 import express from "express";
-import { authMiddleware } from "./auth.js";
+import { extractToken } from "./auth.js";
 import { tools, handleToolCall } from "./tools.js";
 import { JsonRpcMessage } from "./types.js";
 
@@ -27,7 +27,14 @@ function broadcastToAll(data: any) {
   });
 }
 
-app.get("/sse", authMiddleware, (req: any, res: any) => {
+app.get("/sse", (req: any, res: any) => {
+  try {
+    extractToken(req);
+  } catch (error: any) {
+    res.status(401).json({ error: error.message });
+    return;
+  }
+
   const clientId = `client_${++clientIdCounter}`;
   
   res.setHeader("Content-Type", "text/event-stream");
@@ -63,7 +70,15 @@ app.get("/sse", authMiddleware, (req: any, res: any) => {
   });
 });
 
-app.post("/message", authMiddleware, async (req: any, res: any) => {
+app.post("/message", async (req: any, res: any) => {
+  let token: string;
+  try {
+    token = extractToken(req);
+  } catch (error: any) {
+    res.status(401).json({ error: error.message });
+    return;
+  }
+
   const message: JsonRpcMessage = req.body;
   const clientId = req.headers["x-client-id"] as string;
 
@@ -89,7 +104,7 @@ app.post("/message", authMiddleware, async (req: any, res: any) => {
       const toolName = message.params?.name;
       const args = message.params?.arguments || {};
 
-      const result = await handleToolCall(toolName, args, req.userToken);
+      const result = await handleToolCall(toolName, args, token);
 
       const response = {
         jsonrpc: "2.0",

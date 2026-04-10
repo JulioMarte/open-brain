@@ -6,7 +6,8 @@
     "triage": "Triage",
     "focus": "Focus",
     "entities": "Entities",
-    "search": "Search"
+    "search": "Search",
+    "agents": "Agents"
   },
   "triage": {
     "title": "Triage",
@@ -43,5 +44,40 @@
     "noResults": "No results found",
     "memory": "Memory #",
     "confidence": "confidence"
+  },
+  "agents": {
+    "title": "Agents",
+    "description": "Manage your AI agents and their access tokens",
+    "loading": "Loading agents...",
+    "noAgents": "No agents yet. Create one to get started.",
+    "createAgent": "Create Agent",
+    "createNewAgent": "Create New Agent",
+    "agentName": "Agent name",
+    "scope": "Access Scope",
+    "scopes": {
+      "orchestrator": "Orchestrator",
+      "entityScoped": "Entity Scoped",
+      "subAgent": "Sub-Agent"
+    },
+    "scopeDescriptions": {
+      "orchestrator": "Full access to all your entities for 7 days",
+      "entityScoped": "Access to specific entities for 24 hours",
+      "subAgent": "Limited scope for 30 minutes"
+    },
+    "create": "Create",
+    "cancel": "Cancel",
+    "viewTokens": "View Tokens",
+    "tokens": "Access Tokens",
+    "noTokens": "No tokens available",
+    "active": "Active",
+    "inactive": "Inactive",
+    "revoked": "Revoked",
+    "issued": "Issued",
+    "expires": "Expires",
+    "lastUsed": "Last used",
+    "created": "Created",
+    "copyToken": "Copy token",
+    "delete": "Delete",
+    "refresh": "Refresh Token"
   }
 }

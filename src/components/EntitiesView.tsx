@@ -6,6 +6,7 @@ import { Input } from "./ui/input";
 import { Plus } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
+import { QueryErrorBoundary } from "./QueryErrorBoundary";
 
 type EntityType = "project" | "person" | "idea" | "admin";
 
@@ -27,6 +28,26 @@ export function EntitiesView() {
 
   if (entities === undefined) {
     return <div className="p-4">{t("focus.loading")}</div>;
+  }
+
+  if (entities === null) {
+    return (
+      <QueryErrorBoundary>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">{t("entities.title")}</h2>
+              <p className="text-muted-foreground">{t("entities.description")}</p>
+            </div>
+          </div>
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              {t("focus.loading")}
+            </CardContent>
+          </Card>
+        </div>
+      </QueryErrorBoundary>
+    );
   }
 
   return (

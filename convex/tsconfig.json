@@ -10,7 +10,7 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "allowSyntheticDefaultImports": true,
 
     /* These compiler options are required by Convex */

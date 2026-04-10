@@ -6,7 +6,11 @@ import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 
 export const generateAndStoreMemory = action({
-  args: { text: v.string(), linkedEntityIds: v.optional(v.array(v.id("entities"))) },
+  args: { 
+    text: v.string(), 
+    linkedEntityIds: v.optional(v.array(v.id("entities"))),
+    createdBy: v.id("users"),
+  },
   handler: async (ctx, args): Promise<Id<"memories">> => {
     const openAiKey = process.env.OPENAI_API_KEY;
     if (!openAiKey) {
@@ -37,6 +41,7 @@ export const generateAndStoreMemory = action({
       embedding: embedding,
       linkedEntityIds: args.linkedEntityIds,
       createdAt: Date.now(),
+      createdBy: args.createdBy,
     });
 
     return memoryId;

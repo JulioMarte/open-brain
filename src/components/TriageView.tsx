@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { CheckCircle, XCircle } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
+import { QueryErrorBoundary } from "./QueryErrorBoundary";
 
 export function TriageView() {
   const { t } = useTranslation();
@@ -40,6 +41,24 @@ export function TriageView() {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  if (proposals === null) {
+    return (
+      <QueryErrorBoundary>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold">{t("triage.title")}</h2>
+            <p className="text-muted-foreground">{t("triage.description")}</p>
+          </div>
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              {t("triage.loading")}
+            </CardContent>
+          </Card>
+        </div>
+      </QueryErrorBoundary>
     );
   }
 

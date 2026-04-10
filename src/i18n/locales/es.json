@@ -6,7 +6,8 @@
     "triage": "Clasificación",
     "focus": "Enfoque",
     "entities": "Entidades",
-    "search": "Buscar"
+    "search": "Buscar",
+    "agents": "Agentes"
   },
   "triage": {
     "title": "Clasificación",
@@ -43,5 +44,40 @@
     "noResults": "Sin resultados",
     "memory": "Memoria #",
     "confidence": "confianza"
+  },
+  "agents": {
+    "title": "Agentes",
+    "description": "Administra tus agentes de IA y sus tokens de acceso",
+    "loading": "Cargando agentes...",
+    "noAgents": "Sin agentes aún. Crea uno para comenzar.",
+    "createAgent": "Crear Agente",
+    "createNewAgent": "Crear Nuevo Agente",
+    "agentName": "Nombre del agente",
+    "scope": "Alcance de Acceso",
+    "scopes": {
+      "orchestrator": "Orquestador",
+      "entityScoped": "Por Entidad",
+      "subAgent": "Sub-Agente"
+    },
+    "scopeDescriptions": {
+      "orchestrator": "Acceso completo a todas tus entidades por 7 días",
+      "entityScoped": "Acceso a entidades específicas por 24 horas",
+      "subAgent": "Alcance limitado por 30 minutos"
+    },
+    "create": "Crear",
+    "cancel": "Cancelar",
+    "viewTokens": "Ver Tokens",
+    "tokens": "Tokens de Acceso",
+    "noTokens": "Sin tokens disponibles",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "revoked": "Revocado",
+    "issued": "Emitido",
+    "expires": "Expira",
+    "lastUsed": "Último uso",
+    "created": "Creado",
+    "copyToken": "Copiar token",
+    "delete": "Eliminar",
+    "refresh": "Refrescar Token"
   }
 }

@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { Circle } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { useQuery, useMutation } from "convex/react";
+import { QueryErrorBoundary } from "./QueryErrorBoundary";
 
 export function FocusView() {
   const { t } = useTranslation();
@@ -23,6 +24,24 @@ export function FocusView() {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  if (tasks === null) {
+    return (
+      <QueryErrorBoundary>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold">{t("focus.title")}</h2>
+            <p className="text-muted-foreground">{t("focus.description")}</p>
+          </div>
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              {t("focus.loading")}
+            </CardContent>
+          </Card>
+        </div>
+      </QueryErrorBoundary>
     );
   }
 
