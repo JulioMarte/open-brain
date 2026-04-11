@@ -1,3 +1,11 @@
+---
+title: FRONTEND-TESTING-GUIDE - Testing Frontend
+description: Guía para testing de componentes React
+tags: [frontend, testing, guide]
+lastUpdated: 2026-04-10
+author: human
+---
+
 # Frontend Testing Guide
 
 ## Overview

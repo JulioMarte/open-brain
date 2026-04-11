@@ -1,3 +1,11 @@
+---
+title: CONVEX-TESTING-GUIDE - Testing Backend Convex
+description: Guía para testing de funciones de backend Convex
+tags: [convex, testing, guide]
+lastUpdated: 2026-04-10
+author: human
+---
+
 # Convex Backend Testing Guide
 
 ## Overview

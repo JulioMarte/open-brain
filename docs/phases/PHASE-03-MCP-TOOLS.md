@@ -1,4 +1,29 @@
-# PHASE 3: MCP Server Tools Expansion
+---
+title: PHASE-03 - MCP Server Tools Expansion
+description: Fase 3 de desarrollo - Expansión de herramientas MCP
+tags: [mcp, phase, SUPERSEDED]
+lastUpdated: 2026-04-10
+author: human
+supersededBy: MCP-SERVER-FIX-PLAN.md, AUTH-FIX-PLAN.md
+supersededDate: 2026-04-10
+reason: Los endpoints HTTP (/api/mcp/*) fueron eliminados porque httpAction no tiene contexto de auth. El MCP ahora usa ConvexHttpClient con token como argumento.
+---
+
+# ⚠️ SUPERSEDED - ARCHIVO OBSOLETO
+
+**Este documento describe una arquitectura que YA NO es válida.**
+
+**Reemplazado por:**
+- `docs/MCP-SERVER-FIX-PLAN.md` - Arquitectura actual del MCP
+- `docs/AUTH-FIX-PLAN.md` - Sistema de auth de agentes
+
+**Razón:** Los endpoints HTTP (`/api/mcp/*`) fueron eliminados porque
+`httpAction` en Convex NO tiene contexto de auth (`ctx.auth.getUserIdentity()` devuelve null).
+El MCP ahora usa `ConvexHttpClient` con token como argumento de función.
+
+---
+
+# PHASE 3: MCP Server Tools Expansion (LEGACY)
 
 ## Objective
 Expand MCP Server toolkit with surgical tools for agents to perform precise CRUD operations, context pruning, and entity management. Wire them to Convex HTTP endpoints with proper authentication.

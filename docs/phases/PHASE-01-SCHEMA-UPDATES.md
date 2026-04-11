@@ -1,3 +1,11 @@
+---
+title: PHASE-01 - Schema Updates
+description: Fase 1 de desarrollo - Actualizaciones de schema
+tags: [schema, phase]
+lastUpdated: 2026-04-10
+author: human
+---
+
 # PHASE 1: Schema Updates - Open Brain
 
 ## Objective

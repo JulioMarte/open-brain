@@ -1,3 +1,11 @@
+---
+title: MCP-TESTING-GUIDE - Testing MCP Server
+description: Guía para testing del servidor MCP
+tags: [mcp, testing, guide]
+lastUpdated: 2026-04-10
+author: human
+---
+
 # MCP Server Testing Guide
 
 ## Overview

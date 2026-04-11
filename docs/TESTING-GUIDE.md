@@ -1,3 +1,11 @@
+---
+title: TESTING-GUIDE - Guía de Testing
+description: Guía general de testing para Open Brain
+tags: [testing, guide]
+lastUpdated: 2026-04-10
+author: human
+---
+
 # Open Brain Testing Guide
 
 ## Quick Reference

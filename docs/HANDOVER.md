@@ -1,4 +1,26 @@
-# OPEN BRAIN - AUTH FIX HANDOVER
+---
+title: HANDOVER - Auth Fix Handover
+description: Documento de handover para fixes de auth
+tags: [auth, handover, SUPERSEDED]
+lastUpdated: 2026-04-10
+author: human
+supersededBy: MCP-SERVER-FIX-PLAN.md, AUTH-FIX-PLAN.md
+supersededDate: 2026-04-10
+reason: Este handover contiene información heredada del sistema de auth anterior. La arquitectura MCP cambió completamente.
+---
+
+# ⚠️ LEGACY - DOCUMENTO OBSOLETO
+
+**Este documento contiene información heredada del sistema de auth anterior.**
+
+**Ver docs actualizados:**
+- `docs/MCP-SERVER-FIX-PLAN.md` - Arquitectura MCP actual
+- `docs/AUTH-FIX-PLAN.md` - Sistema de auth de agentes
+- `docs/AGENT-AUTH-HANDOVER.md` - Sistema de agent tokens (VIGENTE)
+
+---
+
+# OPEN BRAIN - AUTH FIX HANDOVER (LEGACY)
 
 ## PRIORITY ORDER - Execute in this order
 

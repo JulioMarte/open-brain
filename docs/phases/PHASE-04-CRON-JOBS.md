@@ -1,3 +1,11 @@
+---
+title: PHASE-04 - Proactive Cron Jobs
+description: Fase 4 de desarrollo - Cron jobs proactivos
+tags: [cron, phase]
+lastUpdated: 2026-04-10
+author: human
+---
+
 # PHASE 4: Proactive Cron Jobs
 
 ## Objective

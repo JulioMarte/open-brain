@@ -1,3 +1,11 @@
+---
+title: TESTING-BEST-PRACTICES - Mejores Prácticas de Testing
+description: Mejores prácticas para escribir tests
+tags: [testing, guide]
+lastUpdated: 2026-04-10
+author: human
+---
+
 # Testing Best Practices
 
 ## General Principles

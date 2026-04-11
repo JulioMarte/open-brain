@@ -1,3 +1,11 @@
+---
+title: PHASE-02 - Convex Modules Enhancement
+description: Fase 2 de desarrollo - Mejora de módulos Convex
+tags: [convex, phase]
+lastUpdated: 2026-04-10
+author: human
+---
+
 # PHASE 2: Convex Modules Enhancement
 
 ## Objective
