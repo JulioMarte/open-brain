@@ -9,7 +9,7 @@ export type UserRole = "human" | "agent" | "sub_agent" | "admin";
 export async function getCurrentUser(ctx: QueryCtx | MutationCtx): Promise<UserDoc> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
-    throw new Error("No autenticado");
+    throw new Error("Not authenticated");
   }
 
   const user = await ctx.db
@@ -18,11 +18,11 @@ export async function getCurrentUser(ctx: QueryCtx | MutationCtx): Promise<UserD
     .unique();
 
   if (!user) {
-    throw new Error("Usuario no encontrado");
+    throw new Error("User not found");
   }
 
   if (user.isRevoked) {
-    throw new Error("Usuario ha sido revocado");
+    throw new Error("User has been revoked");
   }
 
   return user;
@@ -58,14 +58,14 @@ export async function getCurrentUserFromAgentToken(
     .unique();
 
   if (!user) {
-    throw new Error("Agente no encontrado");
+    throw new Error("Agent not found");
   }
 
   if (user.isRevoked) {
-    throw new Error("Agente ha sido revocado");
+    throw new Error("Agent has been revoked");
   }
 
-  const tokenHash = hashToken(token);
+  const tokenHash = await hashToken(token);
   const tokens = await ctx.db
     .query("agent_tokens")
     .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
@@ -76,7 +76,43 @@ export async function getCurrentUserFromAgentToken(
   );
 
   if (!validToken) {
-    throw new Error("Token inválido o expirado");
+    throw new Error("Invalid or expired token");
+  }
+
+  return { user, claims };
+}
+
+export async function getCurrentUserFromAgentTokenForMutation(
+  ctx: MutationCtx,
+  token: string
+): Promise<{ user: UserDoc; claims: AgentTokenClaims }> {
+  const claims = await verifyAccessToken(token);
+  
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_tokenIdentifier", (q) => q.eq("tokenIdentifier", `agent_${claims.sub}`))
+    .unique();
+
+  if (!user) {
+    throw new Error("Agent not found");
+  }
+
+  if (user.isRevoked) {
+    throw new Error("Agent has been revoked");
+  }
+
+  const tokenHash = await hashToken(token);
+  const tokens = await ctx.db
+    .query("agent_tokens")
+    .withIndex("by_tokenHash", (q) => q.eq("tokenHash", tokenHash))
+    .take(1);
+
+  const validToken = tokens.find(
+    (t) => !t.isRevoked && t.expiresAt * 1000 > Date.now()
+  );
+
+  if (!validToken) {
+    throw new Error("Invalid or expired token");
   }
 
   return { user, claims };
@@ -94,7 +130,7 @@ export async function updateAgentTokenLastUsed(
 export async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<UserDoc> {
   const user = await getCurrentUser(ctx);
   if (user.role !== "admin") {
-    throw new Error("Solo admins pueden realizar esta accion");
+    throw new Error("Only admins can perform this action");
   }
   return user;
 }
@@ -102,7 +138,7 @@ export async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<UserDoc
 export async function requireAgent(ctx: QueryCtx | MutationCtx): Promise<UserDoc> {
   const user = await getCurrentUser(ctx);
   if (user.role !== "agent" && user.role !== "sub_agent" && user.role !== "admin") {
-    throw new Error("Solo agentes pueden realizar esta accion");
+    throw new Error("Only agents can perform this action");
   }
   return user;
 }
@@ -110,7 +146,7 @@ export async function requireAgent(ctx: QueryCtx | MutationCtx): Promise<UserDoc
 export async function requireHuman(ctx: QueryCtx | MutationCtx): Promise<UserDoc> {
   const user = await getCurrentUser(ctx);
   if (user.role !== "human" && user.role !== "admin") {
-    throw new Error("Solo humanos pueden realizar esta accion");
+    throw new Error("Only humans can perform this action");
   }
   return user;
 }

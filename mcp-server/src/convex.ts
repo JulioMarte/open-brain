@@ -23,178 +23,112 @@ export interface AgentConfig {
   expiresAt: number;
 }
 
-export class ConvexAgentClient {
+export class ConvexClient {
   private client: ConvexHttpClient;
-  private agentConfig: AgentConfig | null = null;
+  private token: string = "";
 
-  constructor(convexUrl: string = CONVEX_URL!) {
-    this.client = new ConvexHttpClient(convexUrl);
+  constructor(url: string = CONVEX_URL!) {
+    this.client = new ConvexHttpClient(url);
   }
 
-  configure(config: AgentConfig) {
-    this.agentConfig = config;
+  setToken(token: string) {
+    this.token = token;
   }
 
-  isConfigured(): boolean {
-    return this.agentConfig !== null && Date.now() < this.agentConfig.expiresAt * 1000;
-  }
-
-  private getToken(): string {
-    if (!this.agentConfig) {
-      throw new Error("Agent not configured. Call configure() first.");
+  private getFullArgs(args: Record<string, unknown>): Record<string, unknown> {
+    if (!this.token) {
+      throw new Error("No agent token set. Call setToken() first.");
     }
-    if (Date.now() >= this.agentConfig.expiresAt * 1000) {
-      throw new Error("Access token expired. Refresh required.");
-    }
-    return this.agentConfig.accessToken;
+    return { ...args, agentToken: this.token };
   }
 
-  private async callConvex<T>(functionName: string, args: Record<string, unknown>): Promise<T> {
-    const token = this.getToken();
-    const response = await fetch(`${CONVEX_URL}/api/mcp/${functionName}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify(args),
-    });
-    
-    const result = await response.json() as { data?: T; error?: string };
-    if (result.error) {
-      throw new Error(result.error);
-    }
-    return result.data as T;
+  async query<T>(name: string, args: Record<string, unknown>): Promise<T> {
+    return await (this.client as any).query(name, this.getFullArgs(args));
   }
 
-  async semanticSearch(query: string, limit: number = 10): Promise<unknown[]> {
-    return this.callConvex<unknown[]>("searchMemories", { queryText: query, limit });
+  async mutation<T>(name: string, args: Record<string, unknown>): Promise<T> {
+    return await (this.client as any).mutation(name, this.getFullArgs(args));
   }
 
-  async getActionableTasks(): Promise<unknown[]> {
-    return this.callConvex<unknown[]>("tasks/getActionable", {});
-  }
-
-  async proposeAction(type: string, payload: string, reason: string): Promise<string> {
-    return this.callConvex<string>("proposals/create", { type, payload, reason });
-  }
-
-  async markTaskDone(taskId: string): Promise<void> {
-    return this.callConvex<void>("tasks/markDone", { id: taskId });
-  }
-
-  async createEntity(args: z.infer<typeof createEntitySchema>): Promise<unknown> {
-    return this.callConvex<unknown>("entities/create", args);
-  }
-
-  async updateEntity(args: z.infer<typeof updateEntitySchema>): Promise<unknown> {
-    return this.callConvex<unknown>("entities/update", args);
-  }
-
-  async updateTask(args: z.infer<typeof updateTaskSchema>): Promise<unknown> {
-    return this.callConvex<unknown>("tasks/update", args);
-  }
-
-  async getSubtasks(args: z.infer<typeof getSubtasksSchema>): Promise<unknown[]> {
-    return this.callConvex<unknown[]>("tasks/getSubtasks", args) || [];
-  }
-
-  async getMemorySource(args: z.infer<typeof getMemorySourceSchema>): Promise<unknown> {
-    return this.callConvex<unknown>("memories/getSource", args);
-  }
-
-  async archiveMemory(args: z.infer<typeof archiveMemorySchema>): Promise<void> {
-    return this.callConvex<void>("memories/archive", args);
-  }
-
-  async getLowConfidenceMemories(args: z.infer<typeof getLowConfidenceMemoriesSchema>): Promise<unknown[]> {
-    return this.callConvex<unknown[]>("memories/lowConfidence", args) || [];
-  }
-
-  async listEntities(): Promise<unknown[]> {
-    return this.callConvex<unknown[]>("entities/list", {});
-  }
-
-  async listTasksByEntity(entityId: string): Promise<unknown[]> {
-    return this.callConvex<unknown[]>("tasks/listByEntity", { entityId });
+  async action<T>(name: string, args: Record<string, unknown>): Promise<T> {
+    return await (this.client as any).action(name, this.getFullArgs(args));
   }
 }
 
-export const agentClient = new ConvexAgentClient();
+export const convexClient = new ConvexClient(CONVEX_URL!);
 
 export { CONVEX_URL };
 
-interface ConvexResult<T> {
-  data?: T;
-  error?: string;
-}
-
-async function callConvex<T>(functionName: string, args: Record<string, unknown>, token: string): Promise<T> {
-  const response = await fetch(`${CONVEX_URL}/api/mcp/${functionName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-    },
-    body: JSON.stringify(args),
-  });
-  
-  const result = await response.json() as ConvexResult<T>;
-  if (result.error) {
-    throw new Error(result.error);
-  }
-  return result.data as T;
-}
-
 export async function semanticSearch(query: string, token: string): Promise<unknown[]> {
-  const result = await callConvex<unknown[]>("searchMemories", { queryText: query, limit: 10 }, token);
-  return result;
+  convexClient.setToken(token);
+  return await convexClient.action<unknown[]>("memories/search", { queryText: query, limit: 10 });
 }
 
 export async function getActionableTasks(token: string): Promise<unknown[]> {
-  const result = await callConvex<unknown[]>("tasks/getActionable", {}, token);
-  return result;
+  convexClient.setToken(token);
+  return await convexClient.query<unknown[]>("tasks/getActionable", {});
 }
 
 export async function proposeAction(type: string, payload: string, reason: string, token: string): Promise<string> {
-  const result = await callConvex<string>("proposals/create", { type, payload, reason }, token);
-  return result;
+  convexClient.setToken(token);
+  return await convexClient.mutation<string>("proposals/create", { type, payload, reason });
 }
 
 export async function markTaskDone(taskId: string, token: string): Promise<void> {
-  await callConvex<void>("tasks/markDone", { id: taskId }, token);
+  convexClient.setToken(token);
+  await convexClient.mutation("tasks/markDone", { id: taskId });
 }
 
 export async function createEntity(args: z.infer<typeof createEntitySchema>, token: string): Promise<unknown> {
-  const result = await callConvex<unknown>("entities/create", args, token);
-  return result;
+  convexClient.setToken(token);
+  return await convexClient.mutation("entities/create", args);
 }
 
 export async function updateEntity(args: z.infer<typeof updateEntitySchema>, token: string): Promise<unknown> {
-  const result = await callConvex<unknown>("entities/update", args, token);
-  return result;
+  convexClient.setToken(token);
+  return await convexClient.mutation("entities/update", args);
 }
 
 export async function updateTask(args: z.infer<typeof updateTaskSchema>, token: string): Promise<unknown> {
-  const result = await callConvex<unknown>("tasks/update", args, token);
-  return result;
+  convexClient.setToken(token);
+  return await convexClient.mutation("tasks/update", args);
 }
 
 export async function getSubtasks(args: z.infer<typeof getSubtasksSchema>, token: string): Promise<unknown[]> {
-  const result = await callConvex<unknown[]>("tasks/getSubtasks", args, token);
-  return result || [];
+  convexClient.setToken(token);
+  return await convexClient.query<unknown[]>("tasks/getSubtasks", args) || [];
 }
 
 export async function getMemorySource(args: z.infer<typeof getMemorySourceSchema>, token: string): Promise<unknown> {
-  const result = await callConvex<unknown>("memories/getSource", args, token);
-  return result;
+  convexClient.setToken(token);
+  return await convexClient.query("memories/getSource", args);
 }
 
 export async function archiveMemory(args: z.infer<typeof archiveMemorySchema>, token: string): Promise<void> {
-  await callConvex<void>("memories/archive", args, token);
+  convexClient.setToken(token);
+  await convexClient.mutation("memories/archive", args);
 }
 
 export async function getLowConfidenceMemories(args: z.infer<typeof getLowConfidenceMemoriesSchema>, token: string): Promise<unknown[]> {
-  const result = await callConvex<unknown[]>("memories/lowConfidence", args, token);
-  return result || [];
+  convexClient.setToken(token);
+  return await convexClient.query<unknown[]>("memories/lowConfidence", args) || [];
+}
+
+export async function listEntities(token: string): Promise<unknown[]> {
+  convexClient.setToken(token);
+  return await convexClient.query<unknown[]>("entities/list", {});
+}
+
+export async function listTasksByEntity(entityId: string, token: string): Promise<unknown[]> {
+  convexClient.setToken(token);
+  return await convexClient.query<unknown[]>("tasks/list", { entityId });
+}
+
+export async function refreshAgentToken(agentId: string, refreshToken: string, token: string): Promise<{
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}> {
+  convexClient.setToken(token);
+  return await convexClient.mutation("agents/refreshAgentToken", { agentId, refreshToken });
 }

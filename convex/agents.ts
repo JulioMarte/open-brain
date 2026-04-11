@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getCurrentUser } from "./lib/auth";
+import { getCurrentUser, getCurrentUserFromAgentTokenForMutation } from "./lib/auth";
 import { Doc } from "./_generated/dataModel";
 import {
   generateAccessToken,
@@ -20,17 +20,20 @@ export const createAgent = mutation({
     scopeEntityIds: v.optional(v.array(v.id("entities"))),
   },
   handler: async (ctx, args) => {
-    const owner = await getCurrentUser(ctx);
+    if (!args.name.trim()) {
+      throw new Error("Name is required");
+    }
+    const user = await getCurrentUser(ctx);
     
-    if (owner.role !== "human" && owner.role !== "admin") {
-      throw new Error("Solo humanos pueden crear agentes");
+    if (user.role !== "admin") {
+      throw new Error("Only admins can create agents");
     }
 
     if (args.scope === "entity_scoped" && (!args.scopeEntityIds || args.scopeEntityIds.length === 0)) {
       throw new Error("Entity-scoped agents must have at least one scope entity ID");
     }
 
-    const tokenIdentifier = `agent_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    const tokenIdentifier = `agent_${Date.now()}_${crypto.randomUUID()}`;
     
     const expiresAt = getTokenExpiration(args.scope);
     const refreshTokenExpiresAt = getRefreshTokenExpiration();
@@ -40,40 +43,39 @@ export const createAgent = mutation({
       role: args.scope === "sub_agent" ? "sub_agent" : "agent",
       name: args.name,
       createdAt: Date.now(),
-      agentOwnerId: owner._id,
+      agentOwnerId: user._id,
       agentScope: args.scope,
-      agentScopes: args.scopeEntityIds,
       isRevoked: false,
     });
 
     const accessToken = await generateAccessToken(
       agentUserId,
-      owner._id,
+      user._id,
       args.scope,
       args.scopeEntityIds,
       expiresAt - Math.floor(Date.now() / 1000)
     );
 
-    const refreshTokenId = Math.random().toString(36).substring(2, 15);
+    const refreshTokenId = crypto.randomUUID();
     const refreshToken = await generateRefreshToken(
       agentUserId,
-      owner._id,
+      user._id,
       args.scope,
       refreshTokenId,
       refreshTokenExpiresAt - Math.floor(Date.now() / 1000)
     );
 
     await ctx.db.insert("agent_tokens", {
-      tokenHash: hashToken(accessToken),
+      tokenHash: await hashToken(accessToken),
       userId: agentUserId,
-      ownerId: owner._id,
+      ownerId: user._id,
       scope: args.scope,
       scopeEntityIds: args.scopeEntityIds,
       issuedAt: Math.floor(Date.now() / 1000),
       expiresAt,
       lastUsedAt: Math.floor(Date.now() / 1000),
       isRevoked: false,
-      refreshTokenHash: hashToken(refreshToken),
+      refreshTokenHash: await hashToken(refreshToken),
       refreshTokenExpiresAt,
     });
 
@@ -105,7 +107,6 @@ export const listAgents = query({
       name: agent.name,
       role: agent.role,
       agentScope: agent.agentScope,
-      agentScopes: agent.agentScopes,
       isRevoked: agent.isRevoked,
       createdAt: agent.createdAt,
     }));
@@ -140,7 +141,6 @@ export const listAllAgentsForOwner = query({
         name: agent.name,
         role: agent.role,
         agentScope: agent.agentScope,
-        agentScopes: agent.agentScopes,
         isRevoked: agent.isRevoked,
         revokedAt: agent.revokedAt,
         createdAt: agent.createdAt,
@@ -159,11 +159,11 @@ export const getAgentTokens = query({
     
     const agent = await ctx.db.get(args.agentId);
     if (!agent) {
-      throw new Error("Agente no encontrado");
+      throw new Error("Agent not found");
     }
 
     if (agent.agentOwnerId !== currentUser._id && currentUser.role !== "admin") {
-      throw new Error("No tienes acceso a este agente");
+      throw new Error("You do not have access to this agent");
     }
 
     const tokens = await ctx.db
@@ -192,11 +192,11 @@ export const revokeAgent = mutation({
     
     const agent = await ctx.db.get(args.agentId);
     if (!agent) {
-      throw new Error("Agente no encontrado");
+      throw new Error("Agent not found");
     }
 
     if (agent.agentOwnerId !== currentUser._id && currentUser.role !== "admin") {
-      throw new Error("No tienes permiso para revocar este agente");
+      throw new Error("You do not have permission to revoke this agent");
     }
 
     await ctx.db.patch(args.agentId, {
@@ -227,11 +227,11 @@ export const revokeAgentToken = mutation({
     
     const token = await ctx.db.get(args.tokenId);
     if (!token) {
-      throw new Error("Token no encontrado");
+      throw new Error("Token not found");
     }
 
     if (token.ownerId !== currentUser._id && currentUser.role !== "admin") {
-      throw new Error("No tienes permiso para revocar este token");
+      throw new Error("You do not have permission to revoke this token");
     }
 
     await ctx.db.patch(args.tokenId, {
@@ -247,21 +247,22 @@ export const refreshAgentToken = mutation({
   args: {
     agentId: v.id("users"),
     refreshToken: v.string(),
+    agentToken: v.string(),
   },
   handler: async (ctx, args) => {
-    const currentUser = await getCurrentUser(ctx);
+    const { user: currentUser } = await getCurrentUserFromAgentTokenForMutation(ctx, args.agentToken);
     
     const agent = await ctx.db.get(args.agentId);
     if (!agent) {
-      throw new Error("Agente no encontrado");
+      throw new Error("Agent not found");
     }
 
     if (agent.agentOwnerId !== currentUser._id && currentUser.role !== "admin") {
-      throw new Error("No tienes permiso para refrescar tokens de este agente");
+      throw new Error("You do not have permission to refresh tokens for this agent");
     }
 
     const { verifyRefreshToken, hashToken: hashTokenFn } = await import("./lib/agentJwt");
-    const refreshTokenHash = hashTokenFn(args.refreshToken);
+    const refreshTokenHash = await hashTokenFn(args.refreshToken);
     
     const existingTokens = await ctx.db
       .query("agent_tokens")
@@ -274,7 +275,7 @@ export const refreshAgentToken = mutation({
     );
 
     if (!validToken) {
-      throw new Error("Refresh token inválido o expirado");
+      throw new Error("Invalid or expired refresh token");
     }
 
     await ctx.db.patch(validToken._id, {
@@ -282,37 +283,41 @@ export const refreshAgentToken = mutation({
       revokedAt: Date.now(),
     });
 
-    const newExpiresAt = getTokenExpiration(agent.agentScope!);
+    if (agent.agentScope === undefined || agent.agentOwnerId === undefined) {
+      throw new Error("Agent missing required scope or ownerId");
+    }
+
+    const newExpiresAt = getTokenExpiration(agent.agentScope);
     const newRefreshTokenExpiresAt = getRefreshTokenExpiration();
     
     const newAccessToken = await generateAccessToken(
       args.agentId,
-      agent.agentOwnerId!,
-      agent.agentScope as AgentScope,
-      agent.agentScopes,
+      agent.agentOwnerId,
+      agent.agentScope,
+      validToken.scopeEntityIds,
       newExpiresAt - Math.floor(Date.now() / 1000)
     );
 
-    const newRefreshTokenId = Math.random().toString(36).substring(2, 15);
+    const newRefreshTokenId = crypto.randomUUID();
     const newRefreshToken = await generateRefreshToken(
       args.agentId,
-      agent.agentOwnerId!,
-      agent.agentScope as AgentScope,
+      agent.agentOwnerId,
+      agent.agentScope,
       newRefreshTokenId,
       newRefreshTokenExpiresAt - Math.floor(Date.now() / 1000)
     );
 
     await ctx.db.insert("agent_tokens", {
-      tokenHash: hashTokenFn(newAccessToken),
+      tokenHash: await hashTokenFn(newAccessToken),
       userId: args.agentId,
-      ownerId: agent.agentOwnerId!,
-      scope: agent.agentScope as AgentScope,
-      scopeEntityIds: agent.agentScopes,
+      ownerId: agent.agentOwnerId,
+      scope: agent.agentScope,
+      scopeEntityIds: validToken.scopeEntityIds,
       issuedAt: Math.floor(Date.now() / 1000),
       expiresAt: newExpiresAt,
       lastUsedAt: Math.floor(Date.now() / 1000),
       isRevoked: false,
-      refreshTokenHash: hashTokenFn(newRefreshToken),
+      refreshTokenHash: await hashTokenFn(newRefreshToken),
       refreshTokenExpiresAt: newRefreshTokenExpiresAt,
     });
 
@@ -331,11 +336,11 @@ export const deleteAgent = mutation({
     
     const agent = await ctx.db.get(args.agentId);
     if (!agent) {
-      throw new Error("Agente no encontrado");
+      throw new Error("Agent not found");
     }
 
     if (agent.agentOwnerId !== currentUser._id && currentUser.role !== "admin") {
-      throw new Error("No tienes permiso para eliminar este agente");
+      throw new Error("You do not have permission to delete this agent");
     }
 
     const tokens = await ctx.db
@@ -345,6 +350,33 @@ export const deleteAgent = mutation({
 
     for (const token of tokens) {
       await ctx.db.delete(token._id);
+    }
+
+    const tasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_createdBy", (q) => q.eq("createdBy", args.agentId))
+      .take(1000);
+
+    for (const task of tasks) {
+      await ctx.db.delete(task._id);
+    }
+
+    const memories = await ctx.db
+      .query("memories")
+      .withIndex("by_createdBy", (q) => q.eq("createdBy", args.agentId))
+      .take(1000);
+
+    for (const memory of memories) {
+      await ctx.db.delete(memory._id);
+    }
+
+    const proposals = await ctx.db
+      .query("proposals")
+      .withIndex("by_createdBy", (q) => q.eq("createdBy", args.agentId))
+      .take(1000);
+
+    for (const proposal of proposals) {
+      await ctx.db.patch(proposal._id, { status: "rejected", reviewedBy: currentUser._id });
     }
 
     await ctx.db.delete(args.agentId);
